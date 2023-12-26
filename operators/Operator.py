@@ -1,6 +1,5 @@
 from abc import abstractmethod
 
-from operators import *
 from operators.OperatorType import OperatorType
 
 
