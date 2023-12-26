@@ -1,14 +1,33 @@
 from abc import abstractmethod
 
-from OperatorType import OperatorType
+from operators import *
+from operators.OperatorType import OperatorType
 
 
 class Operator:
+    """
+    This Class is an abstract class for calculator operators. If you are interested to add a new operation to your
+    calculator, you may extend (inherit) from this class and complete the abstract methods to create a brand-new
+    operator!
+    """
+
     def __init__(self):
         pass
 
+    def calc(self, left_operand: float = None, right_operand: float = None) -> float:
+        if self.get_type() == OperatorType.INNER:
+            if left_operand is None or right_operand is None:
+                pass  # TODO raise exception
+        elif self.get_type() == OperatorType.LEFT:
+            if left_operand is None:
+                pass  # TODO raise exception
+        elif self.get_type() == OperatorType.RIGHT:
+            if right_operand is None:
+                pass  # TODO raise exception
+        return self._calc(left_operand, right_operand)
+
     @abstractmethod
-    def calc(self, op1: float, op2: float = None) -> float:
+    def _calc(self, op1: float = None, op2: float = None) -> float:
         pass
 
     @abstractmethod
@@ -25,7 +44,7 @@ class Operator:
 
 
 class Plus(Operator):
-    def calc(self, op1: float, op2: float = None) -> float:
+    def _calc(self, op1: float = None, op2: float = None) -> float:
         return op1 + op2
 
     def get_symbol(self) -> str:
@@ -39,7 +58,7 @@ class Plus(Operator):
 
 
 class Minus(Operator):
-    def calc(self, op1: float, op2: float = None) -> float:
+    def _calc(self, op1: float = None, op2: float = None) -> float:
         return op1 - op2
 
     def get_symbol(self) -> str:
@@ -53,7 +72,7 @@ class Minus(Operator):
 
 
 class Multiply(Operator):
-    def calc(self, op1: float, op2: float = None) -> float:
+    def _calc(self, op1: float = None, op2: float = None) -> float:
         return op1 * op2
 
     def get_symbol(self) -> str:
@@ -67,7 +86,7 @@ class Multiply(Operator):
 
 
 class Divide(Operator):
-    def calc(self, op1: float, op2: float = None) -> float:
+    def _calc(self, op1: float = None, op2: float = None) -> float:
         return op1 / op2
 
     def get_symbol(self) -> str:
@@ -81,7 +100,7 @@ class Divide(Operator):
 
 
 class Power(Operator):
-    def calc(self, op1: float, op2: float = None) -> float:
+    def _calc(self, op1: float = None, op2: float = None) -> float:
         return op1 ** op2
 
     def get_symbol(self) -> str:
@@ -95,7 +114,7 @@ class Power(Operator):
 
 
 class Modulo(Operator):
-    def calc(self, op1: float, op2: float = None) -> float:
+    def _calc(self, op1: float = None, op2: float = None) -> float:
         return op1 % op2
 
     def get_symbol(self) -> str:
@@ -109,7 +128,7 @@ class Modulo(Operator):
 
 
 class Average(Operator):
-    def calc(self, op1: float, op2: float = None) -> float:
+    def _calc(self, op1: float = None, op2: float = None) -> float:
         return (op1 + op2) / 2
 
     def get_symbol(self) -> str:
@@ -123,7 +142,7 @@ class Average(Operator):
 
 
 class Minimum(Operator):
-    def calc(self, op1: float, op2: float = None) -> float:
+    def _calc(self, op1: float = None, op2: float = None) -> float:
         if op1 < op2:
             return op1
         return op2
@@ -139,7 +158,7 @@ class Minimum(Operator):
 
 
 class Maximum(Operator):
-    def calc(self, op1: float, op2: float = None) -> float:
+    def _calc(self, op1: float = None, op2: float = None) -> float:
         if op1 > op2:
             return op1
         return op2
@@ -155,7 +174,7 @@ class Maximum(Operator):
 
 
 class Negative(Operator):
-    def calc(self, op1: float, unused: float = None) -> float:
+    def _calc(self, op1: float = None, op2: float = None) -> float:
         return -op1
 
     def get_symbol(self) -> str:
@@ -169,10 +188,10 @@ class Negative(Operator):
 
 
 class Factorial(Operator):
-    def calc(self, op1: float, unused: float = None) -> float:
+    def _calc(self, op1: float = None, op2: float = None) -> float:
         op = int(op1)
         result = 1
-        for i in range (1,op+1):
+        for i in range(1, op + 1):
             result *= i
         return result
 
