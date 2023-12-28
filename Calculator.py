@@ -31,7 +31,7 @@ class Calculator:
         self._allowed_chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '(', ')']
 
         # Adds the 4 default operations: + - / *
-        self.add_operators([Plus(),Minus(),Multiply(),Divide()])
+        self.add_operators([Plus(), Minus(), Multiply(), Divide()])
 
     def add_operator(self, op: Operator):
         """
@@ -132,8 +132,8 @@ class Calculator:
                 if left_expression != '':
                     current_node.set_left(self._create_expression_tree(left_expression))
 
-        if op.get_type() != OperatorType.LEFT:
-            right_expression = expression[op_index+1:]
+        if op.get_type() != OperatorType.RIGHT:
+            right_expression = expression[op_index + 1:]
             print("RIGHT EXPRESSION:", right_expression)
             try:
                 right_node = Tree(float(right_expression))
@@ -197,7 +197,8 @@ class Calculator:
         res = -1
         min_priority = None
         for i in range(len(expression)):
-            if self.is_operator(expression[i]) and (min_priority is None or self._operators[expression[i]].get_priority() <= min_priority):
+            if self.is_operator(expression[i]) and (
+                    min_priority is None or self._operators[expression[i]].get_priority() <= min_priority):
                 res = i
                 min_priority = self._operators[expression[i]].get_priority()
         return res

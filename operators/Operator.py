@@ -174,7 +174,7 @@ class Maximum(Operator):
 
 class Negative(Operator):
     def _calc(self, op1: float = None, op2: float = None) -> float:
-        return -op1
+        return -op2
 
     def get_symbol(self) -> str:
         return '~'

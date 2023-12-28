@@ -37,7 +37,7 @@ class Tree:
         return self._left is not None
 
     def has_right(self) -> bool:
-        return self._left is not None
+        return self._right is not None
 
 
 
