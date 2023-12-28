@@ -3,7 +3,6 @@ from operators.Operator import *
 
 if __name__ == '__main__':
     calc = Calculator.Calculator()
-    calc.add_operators([Plus(), Minus(), Multiply(), Divide(), Power()])
+    calc.add_operators([Power(), Factorial(), Negative(), Minimum(), Maximum(), Average()])
     calc.print_allowed_chars()
-    print(calc.evaluate_expression("5^4"))
-
+    print(calc.evaluate_expression("4 * 5 + 1"))

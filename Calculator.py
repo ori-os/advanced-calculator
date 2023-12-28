@@ -1,6 +1,6 @@
 from CalculatorExceptions import InvalidOperatorError, CalculatorInputError
 from Tree import Tree
-from operators.Operator import Operator
+from operators.Operator import Operator, Plus, Minus, Multiply, Divide
 from operators.OperatorType import OperatorType
 
 
@@ -29,6 +29,9 @@ class Calculator:
     def __init__(self):
         self._operators = {}
         self._allowed_chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '(', ')']
+
+        # Adds the 4 default operations: + - / *
+        self.add_operators([Plus(),Minus(),Multiply(),Divide()])
 
     def add_operator(self, op: Operator):
         """
@@ -113,7 +116,7 @@ class Calculator:
         :param expression: the mathematical expression
         :return: a new expression tree that represents this expression
         """
-        op_index = self._get_top_priority(expression)
+        op_index = self._get_last_operator(expression)
         #  if op_index == -1:
         #      raise CalculatorInputError("Something went wrong...")
         op = self._operators.get(expression[op_index])
@@ -185,18 +188,18 @@ class Calculator:
         """
         return self._operators.get(char) is not None
 
-    def _get_top_priority(self, expression: str) -> int:
+    def _get_last_operator(self, expression: str) -> int:
         """
-        Finds the operator with the highest priority in the expression
+        Finds the operator with the lowest priority in the expression
         :param expression: the mathematical expression
         :return: the index of the operator with the highest priority, or -1 if there are no operators
         """
         res = -1
-        max_priority = 0
+        min_priority = None
         for i in range(len(expression)):
-            if self.is_operator(expression[i]) and self._operators[expression[i]].get_priority() > max_priority:
+            if self.is_operator(expression[i]) and (min_priority is None or self._operators[expression[i]].get_priority() <= min_priority):
                 res = i
-                max_priority = self._operators[expression[i]].get_priority()
+                min_priority = self._operators[expression[i]].get_priority()
         return res
 
     def print_allowed_chars(self):
