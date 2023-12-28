@@ -56,8 +56,9 @@ class Calculator:
         if op.get_priority() < 1:
             raise InvalidOperatorError("Operator has invalid priority set, must be positive! Current priority",
                                        op.get_priority())
-        if self._operators.get(op.get_symbol()) is not None:
-            raise CalculatorInputError("You can't add multiple operators that use same symbol in the same calculator")
+        if op.get_symbol() in self._allowed_chars:
+            raise InvalidOperatorError("Operator symbol is already in use and cannot be given an additional use"
+                                       , op.get_symbol())
         self._operators[op.get_symbol()] = op
         self._allowed_chars.append(op.get_symbol())
 
@@ -96,6 +97,9 @@ class Calculator:
             return False
         if has_invalid_brackets(expression):
             pass  # TODO: the expression has invalid usages of brackets
+            return False
+        if self._has_invalid_structure(expression):
+            pass  # TODO: the expression has invalid structure
             return False
         return True
 
@@ -142,6 +146,24 @@ class Calculator:
                 if right_expression != '':
                     current_node.set_right(self._create_expression_tree(right_expression))
         return current_node
+
+    def _evaluate_tree(self, tree: Tree) -> float:
+        """
+        Evaluates the float value of an expression tree
+        :param tree: the expression tree
+        :return: the value of the expression the tree represents
+        """
+        if tree.is_leaf():
+            return tree.get_value()
+
+        op = self._operators[tree.get_value()]
+        left_val = None
+        if tree.has_left():
+            left_val = self._evaluate_tree(tree.get_left())
+        right_val = None
+        if tree.has_right():
+            right_val = self._evaluate_tree(tree.get_right())
+        return op.calc(left_val, right_val)
 
     def _calc(self, expression: str) -> float:
         """
@@ -227,20 +249,24 @@ class Calculator:
             i += 1
         return expression
 
-    def _evaluate_tree(self, tree: Tree) -> float:
-        """
-        Evaluates the float value of an expression tree
-        :param tree: the expression tree
-        :return: the value of the expression the tree represents
-        """
-        if tree.is_leaf():
-            return tree.get_value()
-
-        op = self._operators[tree.get_value()]
-        left_val = None
-        if tree.has_left():
-            left_val = self._evaluate_tree(tree.get_left())
-        right_val = None
-        if tree.has_right():
-            right_val = self._evaluate_tree(tree.get_right())
-        return op.calc(left_val, right_val)
+    def _has_invalid_structure(self, expression: str) -> bool:
+        ch = 0
+        while ch < len(expression):
+            if self.is_operator(expression[ch]):
+                op = self._operators[expression[ch]]
+                if op.get_type() != OperatorType.LEFT:
+                    """For operators that have a left operand, there cannot be another operand to their left unless 
+                    they are themselves a minus symbol, since it can be also interrupted as simply a negative number. 
+                    For example +-5 is a valid structure while ++5 or -+5 is not"""
+                    if ch == 0 or (self.is_operator(expression[ch - 1]) and op.get_symbol() != '-'):
+                        return True
+                if op.get_type() != OperatorType.RIGHT:
+                    """For operators that have a right operand, there cannot be another operand to their right unless 
+                    that operand is a minus, since it can be also interrupted as simply a negative number. For 
+                    example +-5 is a valid structure while ++5 or -+5 is not"""
+                    if ch == len(expression) - 1 or (self.is_operator(expression[ch + 1])
+                                                     and self._operators[expression[ch - 1]].get_symbol() != '-'):
+                        
+                        return True
+            ch += 1
+        return False    

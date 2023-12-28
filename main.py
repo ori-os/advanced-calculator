@@ -6,4 +6,4 @@ if __name__ == '__main__':
     calc.add_operators([Power(), Factorial(), Minimum(), Maximum(), Average(), Negative()])
     calc.print_allowed_chars()
 
-    print(calc.evaluate_expression("~4"))
+    print(calc.evaluate_expression("4 "))
