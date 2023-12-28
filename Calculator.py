@@ -1,5 +1,6 @@
 from CalculatorExceptions import InvalidOperatorError, CalculatorInputError
 from operators.Operator import Operator
+from operators.OperatorType import OperatorType
 
 
 def has_invalid_brackets(expression: str) -> bool:
@@ -12,15 +13,15 @@ def has_invalid_brackets(expression: str) -> bool:
     for char in expression:
         if order_of_brackets < 0:
             # This means the expression has a bracket closer that comes before its matching bracket opener
-            return False
+            return True
         elif char == '(':
             order_of_brackets += 1
         elif char == ')':
             order_of_brackets -= 1
     # This means the number of openers don't match the number of closers
     if order_of_brackets != 0:
-        return False
-    return True
+        return True
+    return False
 
 
 class Calculator:
@@ -69,23 +70,24 @@ class Calculator:
 
     def evaluate_expression(self, expression: str) -> float:
         expression = expression.replace(' ', '')  # Removes all spaces in the expression
-        self._check_invalid_expression(expression)
+        if self._is_expression_valid(expression):
+            return self._calc(expression)
+        else:
+            # TODO
+            print("invalid")
 
-        """The idea here is to get to a point where the expression contains no brackets - if an expression has 
-        brackets, the expression inside the brackets should be evaluated separately (recursively) and have the 
-        result of the evaluation inserted to this expression making it a simple number"""
-
-        print(self._create_priority_list(expression))
         return 0
 
-    def _check_invalid_expression(self, expression: str):
+    def _is_expression_valid(self, expression: str) -> bool:
 
         if self.has_invalid_characters(expression):
             pass  # TODO: expression contains illegal characters
+            return False
         if has_invalid_brackets(expression):
             pass  # TODO: the expression has invalid usages of brackets
-
-        return 0
+            print("brackets")
+            return False
+        return True
 
     def has_invalid_characters(self, expression: str) -> bool:
         """
@@ -97,6 +99,45 @@ class Calculator:
             if char not in self._allowed_chars:
                 return True
         return False
+
+    def _calc(self, expression: str) -> float:
+        """
+        Evaluates the float value of an expression
+        :param expression: the mathematical expression as a string
+        :return: the result of the expression
+        :raises CalculatorInputError: if the expression contains empty brackets: ()
+        :raises CalculatorInputError: if the expression is missing a closing bracket. Note that this function is called
+                after validation meaning this error should never be thrown for this reason. _is_expression_valid() is
+                checking for this kind of invalid error
+        """
+        i = 0
+        while i < len(expression):
+            if expression[i] == '(':
+                """If the current expression has another expression inside brackets in it, the function will evaluate 
+                the expression inside the brackets first and replace in the original expression with its evaluation. 
+                This is done recursively meaning if the bracketed expression also has a bracketed expression in it it 
+                will do the same steps again."""
+                brackets_level = 1
+                j = i + 1
+                while j < len(expression) and brackets_level > 0:
+                    if expression[j] == '(':
+                        brackets_level += 1
+                    elif expression[j] == ')':
+                        brackets_level -= 1
+                    j += 1
+                if brackets_level == 0:
+                    if j == i + 1:
+                        raise CalculatorInputError("Brackets cannot be empty!")
+                    new_expression = expression[i:j]  # expression with brackets
+                    tmp = new_expression[1:len(new_expression) - 1]  # expression without brackets
+                    # print(new_expression)
+                    expression = expression.replace(new_expression, str(self._calc(tmp)))
+                    print(expression)
+                else:
+                    raise CalculatorInputError("Missing close bracket")
+            i += 1
+
+        return 0
 
     def is_operator(self, char: str) -> bool:
         """
@@ -140,3 +181,4 @@ class Calculator:
     def print_allowed_chars(self):
         """Prints all allowed characters the calculator accepts (numbers as well as operations)."""
         print("These are all of the available characters the calculator accepts:", self._allowed_chars)
+        
