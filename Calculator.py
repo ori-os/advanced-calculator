@@ -71,6 +71,8 @@ class Calculator:
     def evaluate_expression(self, expression: str) -> float:
         expression = expression.replace(' ', '')  # Removes all spaces in the expression
         if self._is_expression_valid(expression):
+            expression = self._remove_adjacent_minuses(expression)
+            print(expression)
             return self._calc(expression)
         else:
             # TODO
@@ -137,7 +139,25 @@ class Calculator:
                     raise CalculatorInputError("Missing close bracket")
             i += 1
 
-        return 0
+        operations_order = self._create_priority_list(expression)
+        while len(operations_order) > 0:
+            left_operand = None
+            right_operand = None
+            to_be_replaced_operation = ""
+            op = self._operators[expression[operations_order[0]]]
+            if op.get_type() != OperatorType.LEFT:
+                left_operand = self._get_left_operand(expression, operations_order[0])
+                to_be_replaced_operation += left_operand
+            to_be_replaced_operation += op.get_symbol()
+            if op.get_type() != OperatorType.RIGHT:
+                right_operand = self._get_right_operand(expression, operations_order[0])
+                to_be_replaced_operation += right_operand
+
+            result = op.calc(left_operand, right_operand)
+            print("replacing", to_be_replaced_operation, "with", result)
+            expression = expression.replace(to_be_replaced_operation, result, 1)
+            operations_order = self._create_priority_list(expression)
+        return float(expression)
 
     def is_operator(self, char: str) -> bool:
         """
@@ -181,4 +201,35 @@ class Calculator:
     def print_allowed_chars(self):
         """Prints all allowed characters the calculator accepts (numbers as well as operations)."""
         print("These are all of the available characters the calculator accepts:", self._allowed_chars)
-        
+
+    def _remove_adjacent_minuses(self, expression: str) -> str:
+
+        i = 0
+        flag = False
+        while i < len(expression) - 2 and not flag:
+            if expression[i] == expression[i + 1] == expression[i + 2] == '-':
+                j = i + 3
+                flag = True
+                while j < len(expression) and expression[j] == '-':
+                    j += 1
+                res = ""
+                if i > 0:
+                    res += expression[:i-1]
+                if i < len(expression):
+                    res += expression[j-1:]
+                print(res)
+                return self._remove_adjacent_minuses(res)
+            i += 1
+        return expression
+
+    def _get_left_operand(self, expression: str, operator_index: int) -> float:
+        if operator_index == 0:
+            msg = "The operation " + expression[operator_index] + "is missing a left operand"
+            raise CalculatorInputError(msg)
+        operand = 0
+        i = operator_index - 1
+        while i >= 0:
+            pass
+
+    def _get_right_operand(self, expression: str, operator_index: int) -> float:
+        pass
