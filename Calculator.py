@@ -1,4 +1,5 @@
 from CalculatorExceptions import InvalidOperatorError, CalculatorInputError
+from Tree import Tree
 from operators.Operator import Operator
 from operators.OperatorType import OperatorType
 
@@ -70,10 +71,10 @@ class Calculator:
 
     def evaluate_expression(self, expression: str) -> float:
         expression = expression.replace(' ', '')  # Removes all spaces in the expression
+        expression = self._remove_adjacent_minuses(expression)
         if self._is_expression_valid(expression):
-            expression = self._remove_adjacent_minuses(expression)
-            print(expression)
             return self._calc(expression)
+
         else:
             # TODO
             print("invalid")
@@ -87,7 +88,6 @@ class Calculator:
             return False
         if has_invalid_brackets(expression):
             pass  # TODO: the expression has invalid usages of brackets
-            print("brackets")
             return False
         return True
 
@@ -101,6 +101,34 @@ class Calculator:
             if char not in self._allowed_chars:
                 return True
         return False
+
+    def _create_expression_tree(self, expression: str) -> Tree:
+        op_index = self._get_top_priority(expression)
+        #  if op_index == -1:
+        #      raise CalculatorInputError("Something went wrong...")
+        op = self._operators.get(expression[op_index])
+        current_node = Tree(op.get_symbol())
+
+        if op.get_type() != OperatorType.LEFT:
+            left_expression = expression[:op_index]
+            print("LEFT EXPRESSION:", left_expression)
+            try:
+                left_node = Tree(float(left_expression))
+                current_node.set_left(left_node)
+            except ValueError:
+                if left_expression != '':
+                    current_node.set_left(self._create_expression_tree(left_expression))
+
+        if op.get_type() != OperatorType.LEFT:
+            right_expression = expression[op_index+1:]
+            print("RIGHT EXPRESSION:", right_expression)
+            try:
+                right_node = Tree(float(right_expression))
+                current_node.set_right(right_node)
+            except ValueError:
+                if right_expression != '':
+                    current_node.set_right(self._create_expression_tree(right_expression))
+        return current_node
 
     def _calc(self, expression: str) -> float:
         """
@@ -132,32 +160,14 @@ class Calculator:
                         raise CalculatorInputError("Brackets cannot be empty!")
                     new_expression = expression[i:j]  # expression with brackets
                     tmp = new_expression[1:len(new_expression) - 1]  # expression without brackets
-                    # print(new_expression)
                     expression = expression.replace(new_expression, str(self._calc(tmp)))
-                    print(expression)
                 else:
                     raise CalculatorInputError("Missing close bracket")
             i += 1
 
-        operations_order = self._create_priority_list(expression)
-        while len(operations_order) > 0:
-            left_operand = None
-            right_operand = None
-            to_be_replaced_operation = ""
-            op = self._operators[expression[operations_order[0]]]
-            if op.get_type() != OperatorType.LEFT:
-                left_operand = self._get_left_operand(expression, operations_order[0])
-                to_be_replaced_operation += left_operand
-            to_be_replaced_operation += op.get_symbol()
-            if op.get_type() != OperatorType.RIGHT:
-                right_operand = self._get_right_operand(expression, operations_order[0])
-                to_be_replaced_operation += right_operand
-
-            result = op.calc(left_operand, right_operand)
-            print("replacing", to_be_replaced_operation, "with", result)
-            expression = expression.replace(to_be_replaced_operation, result, 1)
-            operations_order = self._create_priority_list(expression)
-        return float(expression)
+        temp = self._create_expression_tree(expression)
+        # print_tree(temp)
+        return self._evaluate_tree(temp)
 
     def is_operator(self, char: str) -> bool:
         """
@@ -181,14 +191,8 @@ class Calculator:
                 op = self._operators.get(expression[i])
 
                 j = 0
-                while j < len(priority) and op.get_priority() <= self._operators.get(
+                while j < len(priority) and op.get_priority() >= self._operators.get(
                         expression[priority[j]]).get_priority():
-                    """Checks to see whether the priority of the current operator is greater than the priority of the 
-                    Operator in the index j in the priority list. If it is, its getting added to the list before it, 
-                    otherwise it will get added to the end of the priority list. By doing so, we end up having a list 
-                    of all the indexes of all the operators in the expression in a sorted list in a descending order. 
-                    The function goes over every character in the list once meaning the run-time complexity of this 
-                    method is O(n) while n is the number of characters in the expression"""
                     j += 1
 
                 if j < len(priority):
@@ -198,6 +202,20 @@ class Calculator:
 
         return priority
 
+    def _get_top_priority(self, expression: str) -> int:
+        """
+        Finds the operator with the highest priority in the expression
+        :param expression: the mathematical expression
+        :return: the index of the operator with the highest priority, or -1 if there are no operators
+        """
+        res = -1
+        max_priority = 0
+        for i in range(len(expression)):
+            if self.is_operator(expression[i]) and self._operators[expression[i]].get_priority() > max_priority:
+                res = i
+                max_priority = self._operators[expression[i]].get_priority()
+        return res
+
     def print_allowed_chars(self):
         """Prints all allowed characters the calculator accepts (numbers as well as operations)."""
         print("These are all of the available characters the calculator accepts:", self._allowed_chars)
@@ -205,20 +223,14 @@ class Calculator:
     def _remove_adjacent_minuses(self, expression: str) -> str:
 
         i = 0
-        flag = False
-        while i < len(expression) - 2 and not flag:
+        while i < len(expression) - 2:
             if expression[i] == expression[i + 1] == expression[i + 2] == '-':
-                j = i + 3
-                flag = True
+                j = i + 2
                 while j < len(expression) and expression[j] == '-':
                     j += 1
-                res = ""
-                if i > 0:
-                    res += expression[:i-1]
-                if i < len(expression):
-                    res += expression[j-1:]
-                print(res)
-                return self._remove_adjacent_minuses(res)
+
+                expression = expression.replace('-' * (j - i), '-' + '-' * (1 - (j - i) % 2))
+                return self._remove_adjacent_minuses(expression)
             i += 1
         return expression
 
@@ -226,10 +238,45 @@ class Calculator:
         if operator_index == 0:
             msg = "The operation " + expression[operator_index] + "is missing a left operand"
             raise CalculatorInputError(msg)
-        operand = 0
+
         i = operator_index - 1
-        while i >= 0:
-            pass
+        count = 1
+        while i > 0 and self._operators.get(expression[i]) is None:
+            i -= 1
+            count += 1
+        if i >= 0 and self._operators.get(expression[i]) == '-':  # number might be negative
+            if i == 0 or self.is_operator(expression[i - 1]):
+                # if the minus has an operator right before it then its part of the number
+                i += 1
+        number = expression[operator_index - count:operator_index]
+        return float(number)
 
     def _get_right_operand(self, expression: str, operator_index: int) -> float:
-        pass
+        if operator_index == len(expression) - 1:
+            msg = "The operation " + expression[operator_index] + "is missing a right operand"
+            raise CalculatorInputError(msg)
+
+        i = operator_index + 1
+        count = 1
+        if expression[i] == '-':
+            count += 1
+            i += 1
+        while i < len(expression) and self._operators.get(expression[i]) is None:
+            i += 1
+            count += 1
+
+        number = expression[operator_index + 1:operator_index + count]
+        return float(number)
+
+    def _evaluate_tree(self, tree: Tree) -> float:
+        if tree.is_leaf():
+            return tree.get_value()
+
+        op = self._operators[tree.get_value()]
+        left_val = None
+        if tree.has_left():
+            left_val = self._evaluate_tree(tree.get_left())
+        right_val = None
+        if tree.has_right():
+            right_val = self._evaluate_tree(tree.get_right())
+        return op.calc(left_val, right_val)
