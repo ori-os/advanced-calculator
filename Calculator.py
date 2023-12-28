@@ -82,7 +82,12 @@ class Calculator:
         return 0
 
     def _is_expression_valid(self, expression: str) -> bool:
-
+        """
+        Checks whether an expression is a valid mathematical expression, while only using the operators the
+        calculator has
+        :param expression: The mathematical expression to be checked
+        :return:True if the expression is valid, False otherwise
+        """
         if self.has_invalid_characters(expression):
             pass  # TODO: expression contains illegal characters
             return False
@@ -103,6 +108,11 @@ class Calculator:
         return False
 
     def _create_expression_tree(self, expression: str) -> Tree:
+        """
+        The function creates an expression tree of a provided mathematical expression
+        :param expression: the mathematical expression
+        :return: a new expression tree that represents this expression
+        """
         op_index = self._get_top_priority(expression)
         #  if op_index == -1:
         #      raise CalculatorInputError("Something went wrong...")
@@ -132,7 +142,7 @@ class Calculator:
 
     def _calc(self, expression: str) -> float:
         """
-        Evaluates the float value of an expression
+        Evaluates the float value of a complex mathematical expression (which contains brackets)
         :param expression: the mathematical expression as a string
         :return: the result of the expression
         :raises CalculatorInputError: if the expression contains empty brackets: ()
@@ -165,9 +175,7 @@ class Calculator:
                     raise CalculatorInputError("Missing close bracket")
             i += 1
 
-        temp = self._create_expression_tree(expression)
-        # print_tree(temp)
-        return self._evaluate_tree(temp)
+        return self._evaluate_tree(self._create_expression_tree(expression))
 
     def is_operator(self, char: str) -> bool:
         """
@@ -176,31 +184,6 @@ class Calculator:
         :return: True if it's a supported operator, False otherwise
         """
         return self._operators.get(char) is not None
-
-    def _create_priority_list(self, expression: str) -> list:
-        """
-        Creates a list of all indexes in the expression that are operators. The list will be sorted by the operator's
-        priority in the expression.
-        Note: This does *not* include brackets
-        :param expression: The mathematical expression that needs to be evaluated
-        :return: the list of indexes
-        """
-        priority = []
-        for i in range(len(expression)):
-            if self.is_operator(expression[i]):
-                op = self._operators.get(expression[i])
-
-                j = 0
-                while j < len(priority) and op.get_priority() >= self._operators.get(
-                        expression[priority[j]]).get_priority():
-                    j += 1
-
-                if j < len(priority):
-                    priority.insert(j, i)
-                else:
-                    priority.append(i)
-
-        return priority
 
     def _get_top_priority(self, expression: str) -> int:
         """
@@ -221,7 +204,13 @@ class Calculator:
         print("These are all of the available characters the calculator accepts:", self._allowed_chars)
 
     def _remove_adjacent_minuses(self, expression: str) -> str:
-
+        """
+        Removes all unnecessary large sequences of minuses as follows:
+        A sequence of an odd amount of minuses bigger than 1 will be replaced with a single minus (-)
+        A sequence of an even amount of minuses bigger than 2 will be replaced with 2 minuses (--)
+        :param expression: the mathematical expression
+        :return: the new modified expression string
+        """
         i = 0
         while i < len(expression) - 2:
             if expression[i] == expression[i + 1] == expression[i + 2] == '-':
@@ -234,41 +223,12 @@ class Calculator:
             i += 1
         return expression
 
-    def _get_left_operand(self, expression: str, operator_index: int) -> float:
-        if operator_index == 0:
-            msg = "The operation " + expression[operator_index] + "is missing a left operand"
-            raise CalculatorInputError(msg)
-
-        i = operator_index - 1
-        count = 1
-        while i > 0 and self._operators.get(expression[i]) is None:
-            i -= 1
-            count += 1
-        if i >= 0 and self._operators.get(expression[i]) == '-':  # number might be negative
-            if i == 0 or self.is_operator(expression[i - 1]):
-                # if the minus has an operator right before it then its part of the number
-                i += 1
-        number = expression[operator_index - count:operator_index]
-        return float(number)
-
-    def _get_right_operand(self, expression: str, operator_index: int) -> float:
-        if operator_index == len(expression) - 1:
-            msg = "The operation " + expression[operator_index] + "is missing a right operand"
-            raise CalculatorInputError(msg)
-
-        i = operator_index + 1
-        count = 1
-        if expression[i] == '-':
-            count += 1
-            i += 1
-        while i < len(expression) and self._operators.get(expression[i]) is None:
-            i += 1
-            count += 1
-
-        number = expression[operator_index + 1:operator_index + count]
-        return float(number)
-
     def _evaluate_tree(self, tree: Tree) -> float:
+        """
+        Evaluates the float value of an expression tree
+        :param tree: the expression tree
+        :return: the value of the expression the tree represents
+        """
         if tree.is_leaf():
             return tree.get_value()
 
