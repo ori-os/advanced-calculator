@@ -75,6 +75,8 @@ class Calculator:
 
     def evaluate_expression(self, expression: str) -> float:
         expression = expression.replace(' ', '')  # Removes all spaces in the expression
+        expression = expression.replace('\t', '')  # Removes all tabs in the expression
+        expression = expression.replace('\n', '')  # Removes all newlines in the expression
         expression = self._remove_adjacent_minuses(expression)
         if self._is_expression_valid(expression):
             return self._calc(expression)
@@ -94,6 +96,9 @@ class Calculator:
         """
         if self.has_invalid_characters(expression):
             pass  # TODO: expression contains illegal characters
+            return False
+        if expression == "":
+            pass  # TODO: expression does not contain operands
             return False
         if has_invalid_brackets(expression):
             pass  # TODO: the expression has invalid usages of brackets
@@ -121,8 +126,11 @@ class Calculator:
         :return: a new expression tree that represents this expression
         """
         op_index = self._get_last_operator(expression)
-        #  if op_index == -1:
-        #      raise CalculatorInputError("Something went wrong...")
+        if op_index == -1:
+            try:
+                return Tree(float(expression))
+            except ValueError:
+                raise CalculatorInputError("Something went wrong...")
         op = self._operators.get(expression[op_index])
         current_node = Tree(op.get_symbol())
 
@@ -221,8 +229,12 @@ class Calculator:
         for i in range(len(expression)):
             if self.is_operator(expression[i]) and (
                     min_priority is None or self._operators[expression[i]].get_priority() <= min_priority):
-                res = i
-                min_priority = self._operators[expression[i]].get_priority()
+                op = self._operators[expression[i]]
+                if op.get_symbol() != '-' or (
+                        i > 0 and not self.is_operator(expression[i - 1])) or op.get_symbol() == '-' and i == 0:
+                    """Differentiating between - that represent sign and - that are operators"""
+                    res = i
+                    min_priority = self._operators[expression[i]].get_priority()
         return res
 
     def print_allowed_chars(self):
@@ -258,15 +270,15 @@ class Calculator:
                     """For operators that have a left operand, there cannot be another operand to their left unless 
                     they are themselves a minus symbol, since it can be also interrupted as simply a negative number. 
                     For example +-5 is a valid structure while ++5 or -+5 is not"""
-                    if ch == 0 or (self.is_operator(expression[ch - 1]) and op.get_symbol() != '-'):
+                    if (ch == 0 and op.get_symbol() != '-') or (ch != 0 and self.is_operator(expression[ch - 1]) and
+                                                                op.get_symbol() != '-'):
                         return True
                 if op.get_type() != OperatorType.RIGHT:
                     """For operators that have a right operand, there cannot be another operand to their right unless 
                     that operand is a minus, since it can be also interrupted as simply a negative number. For 
                     example +-5 is a valid structure while ++5 or -+5 is not"""
                     if ch == len(expression) - 1 or (self.is_operator(expression[ch + 1])
-                                                     and self._operators[expression[ch - 1]].get_symbol() != '-'):
-                        
+                                                     and self._operators[expression[ch + 1]].get_symbol() != '-'):
                         return True
             ch += 1
-        return False    
+        return False
