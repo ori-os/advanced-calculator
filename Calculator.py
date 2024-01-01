@@ -1,4 +1,4 @@
-from CalculatorExceptions import InvalidOperatorError, CalculatorInputError
+from CalculatorExceptions import InvalidOperatorError, CalculatorInputError, CalculationError
 from Tree import Tree
 from operators.Operator import Operator, Plus, Minus, Multiply, Divide
 from operators.OperatorType import OperatorType
@@ -77,13 +77,19 @@ class Calculator:
         expression = expression.replace(' ', '')  # Removes all spaces in the expression
         expression = expression.replace('\t', '')  # Removes all tabs in the expression
         expression = expression.replace('\n', '')  # Removes all newlines in the expression
-        expression = self._remove_adjacent_minuses(expression)
-        if self._is_expression_valid(expression):
-            return self._calc(expression)
 
-        else:
-            # TODO
-            print("invalid")
+        expression = self._remove_adjacent_minuses(expression)
+
+        if self._is_expression_valid(expression):
+            try:
+                return self._calc(expression)
+            except CalculationError:
+                print("invalid")
+                return 0
+
+
+        # TODO
+        print("invalid")
 
         return 0
 
@@ -136,7 +142,7 @@ class Calculator:
 
         if op.get_type() != OperatorType.LEFT:
             left_expression = expression[:op_index]
-            print("LEFT EXPRESSION:", left_expression)
+            #  print("LEFT EXPRESSION:", left_expression)
             try:
                 left_node = Tree(float(left_expression))
                 current_node.set_left(left_node)
@@ -146,7 +152,7 @@ class Calculator:
 
         if op.get_type() != OperatorType.RIGHT:
             right_expression = expression[op_index + 1:]
-            print("RIGHT EXPRESSION:", right_expression)
+            #  print("RIGHT EXPRESSION:", right_expression)
             try:
                 right_node = Tree(float(right_expression))
                 current_node.set_right(right_node)
@@ -264,7 +270,15 @@ class Calculator:
     def _has_invalid_structure(self, expression: str) -> bool:
         ch = 0
         while ch < len(expression):
-            if self.is_operator(expression[ch]):
+
+            if expression[ch] == '.':
+                """The . symbol must have digits on both of its sides"""
+                if ch == 0 or not expression[ch-1].isnumeric():
+                    return True
+                if ch == len(expression)-1 or not expression[ch+1].isnumeric():
+                    return True
+
+            elif self.is_operator(expression[ch]):
                 op = self._operators[expression[ch]]
                 if op.get_type() != OperatorType.LEFT:
                     """For operators that have a left operand, there cannot be another operand to their left unless 
@@ -280,5 +294,6 @@ class Calculator:
                     if ch == len(expression) - 1 or (self.is_operator(expression[ch + 1])
                                                      and self._operators[expression[ch + 1]].get_symbol() != '-'):
                         return True
+
             ch += 1
         return False

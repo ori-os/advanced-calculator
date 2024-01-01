@@ -10,3 +10,9 @@ class CalculatorInputError(Exception):
         if value is not None:
             reason += ": " + str(value)
         super().__init__(reason)
+
+
+class CalculationError(Exception):
+
+    def __init__(self, reason :str):
+        super().__init__(reason)

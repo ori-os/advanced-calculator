@@ -1,5 +1,6 @@
 from abc import abstractmethod
 
+from CalculatorExceptions import InvalidOperatorError, CalculatorInputError, CalculationError
 from operators.OperatorType import OperatorType
 
 
@@ -43,8 +44,9 @@ class Operator:
 
 
 class Plus(Operator):
-    def _calc(self, op1: float = None, op2: float = None) -> float:
-        return op1 + op2
+    def _calc(self, left: float = None, right: float = None) -> float:
+
+        return left + right
 
     def get_symbol(self) -> str:
         return '+'
@@ -88,6 +90,8 @@ class Multiply(Operator):
 
 class Divide(Operator):
     def _calc(self, op1: float = None, op2: float = None) -> float:
+        if op2 == 0:
+            raise CalculationError("Cannot divide by 0")
         return op1 / op2
 
     def get_symbol(self) -> str:
@@ -102,6 +106,10 @@ class Divide(Operator):
 
 class Power(Operator):
     def _calc(self, op1: float = None, op2: float = None) -> float:
+        if op1 < 0 and op2 < 1:
+            raise CalculationError("Cannot calculate the root of a negative number")
+        if op1 == 0 and op2 == 0:
+            raise CalculationError("Cannot calculate 0 to the power of 0")
         return op1 ** op2
 
     def get_symbol(self) -> str:
@@ -190,7 +198,11 @@ class Negative(Operator):
 
 class Factorial(Operator):
     def _calc(self, op1: float = None, op2: float = None) -> float:
+        if op1 < 0:
+            raise CalculationError("Can not calculate the factorial of a negative number!")
         op = int(op1)
+        if op != op1:
+            raise CalculationError("Can only calculate the factorial of an integer!")
         result = 1
         for i in range(1, op + 1):
             result *= i
