@@ -4,25 +4,25 @@ from operators.Operator import Operator, Plus, Minus, Multiply, Divide
 from operators.OperatorType import OperatorType
 
 
-def has_invalid_brackets(expression: str) -> bool:
+def _validate_brackets(expression: str):
     """
     The function gets a mathematical expression as a string and checks whether its valid
     :param expression: The mathematical expression as a string
-    :return: True if the usages of brackets in the expression is invalid, False otherwise
+    :raises CalculatorInputError: if the usages of brackets in the expression is invalid
     """
     order_of_brackets = 0
     for char in expression:
         if order_of_brackets < 0:
             # This means the expression has a bracket closer that comes before its matching bracket opener
-            return True
+            raise CalculatorInputError("Invalid brackets structure: a closing bracket can only come after its "
+                                       "matching opening bracket.")
         elif char == '(':
             order_of_brackets += 1
         elif char == ')':
             order_of_brackets -= 1
     # This means the number of openers don't match the number of closers
     if order_of_brackets != 0:
-        return True
-    return False
+        raise CalculatorInputError("Missing closing bracket(s)", order_of_brackets)
 
 
 class Calculator:
@@ -78,52 +78,33 @@ class Calculator:
         expression = expression.replace('\t', '')  # Removes all tabs in the expression
         expression = expression.replace('\n', '')  # Removes all newlines in the expression
 
+        # Makes sure the expression isn't empty
+        if expression == "":
+            raise CalculatorInputError("Expression is empty")
+
+        # Leaving only necessary minuses in the expression
         expression = self._remove_adjacent_minuses(expression)
 
-        if self._is_expression_valid(expression):
-            try:
-                return self._calc(expression)
-            except CalculationError:
-                print("invalid")
-                return 0
+        # Checks for not supported characters
+        self._validate_characters(expression)
 
+        # Checks for valid brackets usage and structure
+        _validate_brackets(expression)
 
-        # TODO
-        print("invalid")
+        # Checks for a valid expression structure
+        self._validate_structure(expression)
 
-        return 0
+        return self._calc(expression)
 
-    def _is_expression_valid(self, expression: str) -> bool:
-        """
-        Checks whether an expression is a valid mathematical expression, while only using the operators the
-        calculator has
-        :param expression: The mathematical expression to be checked
-        :return:True if the expression is valid, False otherwise
-        """
-        if self.has_invalid_characters(expression):
-            pass  # TODO: expression contains illegal characters
-            return False
-        if expression == "":
-            pass  # TODO: expression does not contain operands
-            return False
-        if has_invalid_brackets(expression):
-            pass  # TODO: the expression has invalid usages of brackets
-            return False
-        if self._has_invalid_structure(expression):
-            pass  # TODO: the expression has invalid structure
-            return False
-        return True
-
-    def has_invalid_characters(self, expression: str) -> bool:
+    def _validate_characters(self, expression: str):
         """
         The function receives a str expression and checks whether it contains illegal characters
         :param expression: A mathematical expression
-        :return: True if the expression contains characters that the calculator does not support, False otherwise.
+        :raises CalculatorInputError: if the expression contains characters that the calculator does not support.
         """
         for char in expression:
             if char not in self._allowed_chars:
-                return True
-        return False
+                raise CalculatorInputError("The expression contains an unsupported character: " + char)
 
     def _create_expression_tree(self, expression: str) -> Tree:
         """
@@ -205,7 +186,7 @@ class Calculator:
                         brackets_level -= 1
                     j += 1
                 if brackets_level == 0:
-                    if j == i + 1:
+                    if j == i + 2:
                         raise CalculatorInputError("Brackets cannot be empty!")
                     new_expression = expression[i:j]  # expression with brackets
                     tmp = new_expression[1:len(new_expression) - 1]  # expression without brackets
@@ -237,8 +218,8 @@ class Calculator:
                     min_priority is None or self._operators[expression[i]].get_priority() <= min_priority):
                 op = self._operators[expression[i]]
                 if op.get_symbol() != '-' or (
-                        i > 0 and not self.is_operator(expression[i - 1])) or op.get_symbol() == '-' and i == 0:
-                    """Differentiating between - that represent sign and - that are operators"""
+                        i > 0 and not self.is_operator(expression[i - 1])):
+                    """Differentiating between minus that represent sign and - that are operators"""
                     res = i
                     min_priority = self._operators[expression[i]].get_priority()
         return res
@@ -267,16 +248,23 @@ class Calculator:
             i += 1
         return expression
 
-    def _has_invalid_structure(self, expression: str) -> bool:
+    def _validate_structure(self, expression: str):
+        """
+        Checks whether a mathematical expression has a valid structure.
+        :param expression: the mathematical expression
+        :raises: CalculatorInputError if the structure of the expression is invalid.
+        """
         ch = 0
         while ch < len(expression):
 
             if expression[ch] == '.':
                 """The . symbol must have digits on both of its sides"""
-                if ch == 0 or not expression[ch-1].isnumeric():
-                    return True
-                if ch == len(expression)-1 or not expression[ch+1].isnumeric():
-                    return True
+                if ch == 0 or not expression[ch - 1].isnumeric():
+                    raise CalculatorInputError(
+                        "Invalid expression structure: a decimal point must be part of a number!")
+                if ch == len(expression) - 1 or not expression[ch + 1].isnumeric():
+                    raise CalculatorInputError(
+                        "Invalid expression structure: a decimal point must be part of a number!")
 
             elif self.is_operator(expression[ch]):
                 op = self._operators[expression[ch]]
@@ -284,16 +272,18 @@ class Calculator:
                     """For operators that have a left operand, there cannot be another operand to their left unless 
                     they are themselves a minus symbol, since it can be also interrupted as simply a negative number. 
                     For example +-5 is a valid structure while ++5 or -+5 is not"""
-                    if (ch == 0 and op.get_symbol() != '-') or (ch != 0 and self.is_operator(expression[ch - 1]) and
-                                                                op.get_symbol() != '-'):
-                        return True
+                    if ((ch == 0 and op.get_symbol() != '-') or
+                            (ch != 0 and self.is_operator(expression[ch - 1]) and op.get_symbol() != '-') or
+                            (ch == 0 and expression[ch + 1] == '-')):
+                        raise CalculatorInputError("Invalid expression structure: operator " + op.get_symbol() +
+                                                   " is missing an operand to its left")
                 if op.get_type() != OperatorType.RIGHT:
                     """For operators that have a right operand, there cannot be another operand to their right unless 
                     that operand is a minus, since it can be also interrupted as simply a negative number. For 
                     example +-5 is a valid structure while ++5 or -+5 is not"""
                     if ch == len(expression) - 1 or (self.is_operator(expression[ch + 1])
                                                      and self._operators[expression[ch + 1]].get_symbol() != '-'):
-                        return True
+                        raise CalculatorInputError("Invalid expression structure: operator " + op.get_symbol() +
+                                                   " is missing an operand to its right")
 
             ch += 1
-        return False

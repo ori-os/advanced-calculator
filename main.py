@@ -8,7 +8,13 @@ if __name__ == '__main__':
 
     while True:
         s = input("Enter a mathematical expression: \n")
-        print(calc.evaluate_expression(s))
+
+        try:
+            print("The result of the expression is: " + str(calc.evaluate_expression(s)))
+        except CalculatorInputError as e:
+            print("Could not evaluate the expression: " + str(e))
+        except CalculationError as e:
+            print("Could not evaluate the expression: " + str(e))
 
 
 

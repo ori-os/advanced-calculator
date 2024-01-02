@@ -14,5 +14,5 @@ class CalculatorInputError(Exception):
 
 class CalculationError(Exception):
 
-    def __init__(self, reason :str):
+    def __init__(self, reason: str):
         super().__init__(reason)

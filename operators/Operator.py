@@ -60,8 +60,6 @@ class Plus(Operator):
 
 class Minus(Operator):
     def _calc(self, op1: float = None, op2: float = None) -> float:
-        if op1 is None:
-            return -op2
         return op1 - op2
 
     def get_symbol(self) -> str:
