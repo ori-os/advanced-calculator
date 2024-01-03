@@ -1,4 +1,4 @@
-from CalculatorExceptions import InvalidOperatorError, CalculatorInputError, CalculationError
+from CalculatorExceptions import InvalidOperatorError, CalculatorInputError
 from Tree import Tree
 from operators.Operator import Operator, Plus, Minus, Multiply, Divide
 from operators.OperatorType import OperatorType
@@ -106,7 +106,7 @@ class Calculator:
             if char not in self._allowed_chars:
                 raise CalculatorInputError("The expression contains an unsupported character: " + char)
 
-    def _create_expression_tree(self, expression: str) -> Tree:
+    def _build_expression_tree(self, expression: str) -> Tree:
         """
         The function creates an expression tree of a provided mathematical expression
         :param expression: the mathematical expression
@@ -118,8 +118,8 @@ class Calculator:
                 return Tree(float(expression))
             except ValueError:
                 raise CalculatorInputError("Something went wrong...")
-        op = self._operators.get(expression[op_index])
-        current_node = Tree(op.get_symbol())
+        op = self._get_operator(expression[op_index])
+        current_node = Tree(op)
 
         if op.get_type() != OperatorType.LEFT:
             left_expression = expression[:op_index]
@@ -129,7 +129,7 @@ class Calculator:
                 current_node.set_left(left_node)
             except ValueError:
                 if left_expression != '':
-                    current_node.set_left(self._create_expression_tree(left_expression))
+                    current_node.set_left(self._build_expression_tree(left_expression))
 
         if op.get_type() != OperatorType.RIGHT:
             right_expression = expression[op_index + 1:]
@@ -139,7 +139,7 @@ class Calculator:
                 current_node.set_right(right_node)
             except ValueError:
                 if right_expression != '':
-                    current_node.set_right(self._create_expression_tree(right_expression))
+                    current_node.set_right(self._build_expression_tree(right_expression))
         return current_node
 
     def _evaluate_tree(self, tree: Tree) -> float:
@@ -151,7 +151,7 @@ class Calculator:
         if tree.is_leaf():
             return tree.get_value()
 
-        op = self._operators[tree.get_value()]
+        op = tree.get_value()
         left_val = None
         if tree.has_left():
             left_val = self._evaluate_tree(tree.get_left())
@@ -195,7 +195,7 @@ class Calculator:
                     raise CalculatorInputError("Missing close bracket")
             i += 1
 
-        return self._evaluate_tree(self._create_expression_tree(expression))
+        return self._evaluate_tree(self._build_expression_tree(expression))
 
     def is_operator(self, char: str) -> bool:
         """
@@ -215,13 +215,13 @@ class Calculator:
         min_priority = None
         for i in range(len(expression)):
             if self.is_operator(expression[i]) and (
-                    min_priority is None or self._operators[expression[i]].get_priority() <= min_priority):
-                op = self._operators[expression[i]]
+                    min_priority is None or self._get_operator(expression[i]).get_priority() <= min_priority):
+                op = self._get_operator(expression[i])
                 if op.get_symbol() != '-' or (
                         i > 0 and not self.is_operator(expression[i - 1])):
                     """Differentiating between minus that represent sign and - that are operators"""
                     res = i
-                    min_priority = self._operators[expression[i]].get_priority()
+                    min_priority = self._get_operator(expression[i]).get_priority()
         return res
 
     def print_allowed_chars(self):
@@ -267,13 +267,14 @@ class Calculator:
                         "Invalid expression structure: a decimal point must be part of a number!")
 
             elif self.is_operator(expression[ch]):
-                op = self._operators[expression[ch]]
+                op = self._get_operator(expression[ch])
                 if op.get_type() != OperatorType.LEFT:
                     """For operators that have a left operand, there cannot be another operand to their left unless 
                     they are themselves a minus symbol, since it can be also interrupted as simply a negative number. 
                     For example +-5 is a valid structure while ++5 or -+5 is not"""
                     if ((ch == 0 and op.get_symbol() != '-') or
-                            (ch != 0 and self.is_operator(expression[ch - 1]) and op.get_symbol() != '-') or
+                            (ch != 0 and self.is_operator(expression[ch - 1]) and op.get_symbol() != '-' and
+                             self._get_operator(expression[ch - 1]).get_type() != OperatorType.RIGHT) or
                             (ch == 0 and expression[ch + 1] == '-')):
                         raise CalculatorInputError("Invalid expression structure: operator " + op.get_symbol() +
                                                    " is missing an operand to its left")
@@ -282,8 +283,20 @@ class Calculator:
                     that operand is a minus, since it can be also interrupted as simply a negative number. For 
                     example +-5 is a valid structure while ++5 or -+5 is not"""
                     if ch == len(expression) - 1 or (self.is_operator(expression[ch + 1])
-                                                     and self._operators[expression[ch + 1]].get_symbol() != '-'):
+                                                     and self._get_operator(expression[ch + 1]).get_symbol() != '-'
+                                                     and self._get_operator(expression[ch + 1]).get_type() != OperatorType.LEFT):
                         raise CalculatorInputError("Invalid expression structure: operator " + op.get_symbol() +
                                                    " is missing an operand to its right")
 
             ch += 1
+
+    def _get_operator(self, symbol: str) -> Operator | None:
+        """
+        Gets an operator the calculator has based on its symbol
+        :param symbol: of the operator
+        :return: an instance of an operator which is represented by that matching symbol, or None if no matching
+                operator exists in the calculator
+        """
+        if not self.is_operator(symbol):
+            return None
+        return self._operators[symbol]

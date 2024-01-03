@@ -1,5 +1,6 @@
 import Calculator
-from operators.Operator import *
+from CalculatorExceptions import CalculatorInputError, CalculationError
+from operators.Operator import Power, Factorial, Minimum, Maximum, Average, Negative
 
 if __name__ == '__main__':
     calc = Calculator.Calculator()

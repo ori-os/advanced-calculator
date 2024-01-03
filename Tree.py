@@ -1,16 +1,8 @@
-def print_tree(tree: 'Tree'):
-    if tree is None:
-        return
-
-    print(tree.get_value())
-    print("L")
-    print_tree(tree.get_left())
-    print("R")
-    print(tree.get_right())
+from operators.Operator import Operator
 
 
 class Tree:
-    def __init__(self, value: float | str, left: 'Tree' = None, right: 'Tree' = None):
+    def __init__(self, value: float | Operator, left: 'Tree' = None, right: 'Tree' = None):
         self._left = left
         self._right = right
         self._value = value
@@ -27,7 +19,7 @@ class Tree:
     def set_right(self, right: 'Tree'):
         self._right = right
 
-    def get_value(self) -> float | str:
+    def get_value(self) -> Operator | float:
         return self._value
 
     def is_leaf(self) -> bool:
