@@ -57,8 +57,8 @@ class Calculator:
             raise InvalidOperatorError("Operator has invalid priority set, must be positive! Current priority",
                                        op.get_priority())
         if op.get_symbol() in self._allowed_chars:
-            raise InvalidOperatorError("Operator symbol is already in use and cannot be given an additional use"
-                                       , op.get_symbol())
+            raise InvalidOperatorError("Operator symbol is already in use and cannot be given an additional use",
+                                       op.get_symbol())
         self._operators[op.get_symbol()] = op
         self._allowed_chars.append(op.get_symbol())
 
@@ -147,6 +147,8 @@ class Calculator:
         Evaluates the float value of an expression tree
         :param tree: the expression tree
         :return: the value of the expression the tree represents
+        :raises CalculationError: if part of the tree cannot be calculated based on the limitations of the
+            operators in the tree.
         """
         if tree.is_leaf():
             return tree.get_value()
@@ -165,10 +167,8 @@ class Calculator:
         Evaluates the float value of a complex mathematical expression (which contains brackets)
         :param expression: the mathematical expression as a string
         :return: the result of the expression
-        :raises CalculatorInputError: if the expression contains empty brackets: ()
-        :raises CalculatorInputError: if the expression is missing a closing bracket. Note that this function is called
-                after validation meaning this error should never be thrown for this reason. _is_expression_valid() is
-                checking for this kind of invalid error
+        :raises CalculatorInputError: if the expression contains empty brackets: ().
+        :raises CalculatorInputError: if the expression is missing a closing bracket.
         """
         i = 0
         while i < len(expression):
@@ -218,7 +218,8 @@ class Calculator:
                     min_priority is None or self._get_operator(expression[i]).get_priority() <= min_priority):
                 op = self._get_operator(expression[i])
                 if op.get_symbol() != '-' or (
-                        i > 0 and not self.is_operator(expression[i - 1])):
+                        i > 0 and (not self.is_operator(expression[i - 1]) or self._get_operator(
+                    expression[i - 1]).get_type() == OperatorType.RIGHT)):
                     """Differentiating between minus that represent sign and - that are operators"""
                     res = i
                     min_priority = self._get_operator(expression[i]).get_priority()
@@ -269,24 +270,58 @@ class Calculator:
             elif self.is_operator(expression[ch]):
                 op = self._get_operator(expression[ch])
                 if op.get_type() != OperatorType.LEFT:
-                    """For operators that have a left operand, there cannot be another operand to their left unless 
-                    they are themselves a minus symbol, since it can be also interrupted as simply a negative number. 
-                    For example +-5 is a valid structure while ++5 or -+5 is not"""
-                    if ((ch == 0 and op.get_symbol() != '-') or
-                            (ch != 0 and self.is_operator(expression[ch - 1]) and op.get_symbol() != '-' and
-                             self._get_operator(expression[ch - 1]).get_type() != OperatorType.RIGHT) or
-                            (ch == 0 and expression[ch + 1] == '-')):
+                    """The function will raise an exception if:
+                        1. The current operator is at the start of the expression, other than minus followed by a number
+                            reason: since there is not an operand to the left of the operator
+                                exception:
+                                    - if the operator is a minus followed by a number/nothing (for expressions like -5)
+                            example: +4
+                        2. The operator has another operator to its right that is not a right operator 
+                            and that the current operator is not a minus.
+                            reason: two operators cannot come right after another
+                                exception:
+                                    - if the current operator is a minus (to account for expressions like 5+-6)
+                                    - if the other operator is of type left (to account for expressions like 5!+1)
+                            example: 5++1
+                    """
+                    if ((ch == 0 and (op.get_symbol() != '-' or len(expression) == 1 or not expression[1].isnumeric()))
+                            or (ch != 0 and self.is_operator(expression[ch - 1])
+                                and op.get_symbol() != '-'
+                                and self._get_operator(expression[ch - 1]).get_type() != OperatorType.RIGHT)):
                         raise CalculatorInputError("Invalid expression structure: operator " + op.get_symbol() +
                                                    " is missing an operand to its left")
                 if op.get_type() != OperatorType.RIGHT:
-                    """For operators that have a right operand, there cannot be another operand to their right unless 
-                    that operand is a minus, since it can be also interrupted as simply a negative number. For 
-                    example +-5 is a valid structure while ++5 or -+5 is not"""
-                    if ch == len(expression) - 1 or (self.is_operator(expression[ch + 1])
-                                                     and self._get_operator(expression[ch + 1]).get_symbol() != '-'
-                                                     and self._get_operator(expression[ch + 1]).get_type() != OperatorType.LEFT):
+                    """The function will raise an exception if:
+                        1. The current operator is at the end of the expression.
+                            reason: since there is not an operand to the right of the operator
+                            example: 4+
+                        2. The char after the operator is also an operator that is not a minus or a left operator.
+                            reason: two operators cannot come right after another. 
+                                    exception: 
+                                        - if the 2nd operator is a minus (to account for expressions like 3+-5)
+                                        - if the 2nd operator is of type left (to account for expressions like 3+!6)
+                            example: 6++1
+                        3. The char after the operator is a minus and the char after the minus is not a number
+                            reason: to make sure if the operator is followed by a minus, that minus is representing 
+                                    a sign rather than an actual operator.
+                            example: 3+--5
+                            
+                        4. The operator is of type left and is followed by another operator of type left
+                            reason: since the stacking of ~ is not allowed. 
+                            example: ~~6
+                            """
+                    if (ch == len(expression) - 1
+                            or (self.is_operator(expression[ch + 1])
+                                and self._get_operator(expression[ch + 1]).get_symbol() != '-'
+                                and ((self._get_operator(expression[ch + 1]).get_type() != OperatorType.LEFT)
+                                     or (ch == len(expression) - 2 or not expression[ch+2].isnumeric())))):
                         raise CalculatorInputError("Invalid expression structure: operator " + op.get_symbol() +
                                                    " is missing an operand to its right")
+                    elif (op.get_type() == OperatorType.LEFT
+                          and self.is_operator(expression[ch + 1])
+                          and self._get_operator(expression[ch + 1]).get_type() == OperatorType.LEFT):
+                        raise CalculatorInputError("Invalid expression structure: unary operators to the left of an "
+                                                   "operand cannot be stacked!")
 
             ch += 1
 
