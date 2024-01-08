@@ -2,10 +2,10 @@ import pytest
 
 import Calculator
 from CalculatorExceptions import CalculatorInputError
-from operators.Operator import Power, Factorial, Minimum, Maximum, Average, Negative
+from operators.Operator import Power, Factorial, Minimum, Maximum, Average, Negative, Modulo
 
 calc = Calculator.Calculator()
-calc.add_operators([Power(), Factorial(), Minimum(), Maximum(), Average(), Negative()])
+calc.add_operators([Power(), Factorial(), Minimum(), Maximum(), Average(), Negative(), Modulo()])
 
 
 def test_syntax_1():

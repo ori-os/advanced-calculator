@@ -1,10 +1,10 @@
 import Calculator
 from CalculatorExceptions import CalculatorInputError, CalculationError
-from operators.Operator import Power, Factorial, Minimum, Maximum, Average, Negative
+from operators.Operator import Power, Factorial, Minimum, Maximum, Average, Negative, Modulo
 
 if __name__ == '__main__':
     calc = Calculator.Calculator()
-    calc.add_operators([Power(), Factorial(), Minimum(), Maximum(), Average(), Negative()])
+    calc.add_operators([Power(), Factorial(), Minimum(), Maximum(), Average(), Negative(), Modulo()])
     calc.print_allowed_chars()
 
     while True:
