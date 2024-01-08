@@ -8,26 +8,16 @@ calc = Calculator.Calculator()
 calc.add_operators([Power(), Factorial(), Minimum(), Maximum(), Average(), Negative()])
 
 
-def test_syntax_1():
+def test_invalid_characters():
     with pytest.raises(CalculatorInputError):
-        calc.evaluate_expression("5-+4")
+        calc.evaluate_expression("shalom ani ori blah blah blah")
 
 
-def test_syntax_2():
+def test_empty():
     with pytest.raises(CalculatorInputError):
-        calc.evaluate_expression("5^*2")
+        calc.evaluate_expression("")
 
 
-def test_syntax_3():
+def test_whitespaces():
     with pytest.raises(CalculatorInputError):
-        calc.evaluate_expression("!6")
-
-
-def test_4():
-    with pytest.raises(CalculatorInputError):
-        calc.evaluate_expression("5+ ~~6")
-
-
-def test_5():
-    with pytest.raises(CalculatorInputError):
-        calc.evaluate_expression("8-/4")
+        calc.evaluate_expression("\n \t")
