@@ -1,8 +1,8 @@
 import Calculator
-from operators.Operator import Power, Factorial, Minimum, Maximum, Average, Negative, Modulo
+from operators.Operator import Power, Factorial, Minimum, Maximum, Average, Negative, Modulo, DigitSum
 
 calc = Calculator.Calculator()
-calc.add_operators([Power(), Factorial(), Minimum(), Maximum(), Average(), Negative(), Modulo()])
+calc.add_operators([Power(), Factorial(), Minimum(), Maximum(), Average(), Negative(), Modulo(), DigitSum()])
 
 
 def test_1():

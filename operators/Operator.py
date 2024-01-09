@@ -27,7 +27,7 @@ class Operator:
         return self._calc(left_operand, right_operand)
 
     @abstractmethod
-    def _calc(self, op1: float = None, op2: float = None) -> float:
+    def _calc(self, left: float = None, right: float = None) -> float:
         pass
 
     @abstractmethod
@@ -45,7 +45,6 @@ class Operator:
 
 class Plus(Operator):
     def _calc(self, left: float = None, right: float = None) -> float:
-
         return left + right
 
     def get_symbol(self) -> str:
@@ -59,8 +58,8 @@ class Plus(Operator):
 
 
 class Minus(Operator):
-    def _calc(self, op1: float = None, op2: float = None) -> float:
-        return op1 - op2
+    def _calc(self, left: float = None, right: float = None) -> float:
+        return left - right
 
     def get_symbol(self) -> str:
         return '-'
@@ -73,8 +72,8 @@ class Minus(Operator):
 
 
 class Multiply(Operator):
-    def _calc(self, op1: float = None, op2: float = None) -> float:
-        return op1 * op2
+    def _calc(self, left: float = None, right: float = None) -> float:
+        return left * right
 
     def get_symbol(self) -> str:
         return '*'
@@ -87,10 +86,10 @@ class Multiply(Operator):
 
 
 class Divide(Operator):
-    def _calc(self, op1: float = None, op2: float = None) -> float:
-        if op2 == 0:
+    def _calc(self, left: float = None, right: float = None) -> float:
+        if right == 0:
             raise CalculationError("Cannot divide by 0")
-        return op1 / op2
+        return left / right
 
     def get_symbol(self) -> str:
         return '/'
@@ -103,12 +102,12 @@ class Divide(Operator):
 
 
 class Power(Operator):
-    def _calc(self, op1: float = None, op2: float = None) -> float:
-        if op1 < 0 and op2 < 1:
+    def _calc(self, left: float = None, right: float = None) -> float:
+        if left < 0 and right < 1:
             raise CalculationError("Cannot calculate the root of a negative number")
-        if op1 == 0 and op2 == 0:
+        if left == 0 and right == 0:
             raise CalculationError("Cannot calculate 0 to the power of 0")
-        return op1 ** op2
+        return left ** right
 
     def get_symbol(self) -> str:
         return '^'
@@ -121,8 +120,8 @@ class Power(Operator):
 
 
 class Modulo(Operator):
-    def _calc(self, op1: float = None, op2: float = None) -> float:
-        return op1 % op2
+    def _calc(self, left: float = None, right: float = None) -> float:
+        return left % right
 
     def get_symbol(self) -> str:
         return '%'
@@ -135,8 +134,8 @@ class Modulo(Operator):
 
 
 class Average(Operator):
-    def _calc(self, op1: float = None, op2: float = None) -> float:
-        return (op1 + op2) / 2
+    def _calc(self, left: float = None, right: float = None) -> float:
+        return (left + right) / 2
 
     def get_symbol(self) -> str:
         return '@'
@@ -149,10 +148,10 @@ class Average(Operator):
 
 
 class Minimum(Operator):
-    def _calc(self, op1: float = None, op2: float = None) -> float:
-        if op1 < op2:
-            return op1
-        return op2
+    def _calc(self, left: float = None, right: float = None) -> float:
+        if left < right:
+            return left
+        return right
 
     def get_symbol(self) -> str:
         return '&'
@@ -165,10 +164,10 @@ class Minimum(Operator):
 
 
 class Maximum(Operator):
-    def _calc(self, op1: float = None, op2: float = None) -> float:
-        if op1 > op2:
-            return op1
-        return op2
+    def _calc(self, left: float = None, right: float = None) -> float:
+        if left > right:
+            return left
+        return right
 
     def get_symbol(self) -> str:
         return '$'
@@ -181,8 +180,8 @@ class Maximum(Operator):
 
 
 class Negative(Operator):
-    def _calc(self, op1: float = None, op2: float = None) -> float:
-        return -op2
+    def _calc(self, unused: float = None, right: float = None) -> float:
+        return -right
 
     def get_symbol(self) -> str:
         return '~'
@@ -195,11 +194,11 @@ class Negative(Operator):
 
 
 class Factorial(Operator):
-    def _calc(self, op1: float = None, op2: float = None) -> float:
-        if op1 < 0:
+    def _calc(self, left: float = None, unused: float = None) -> float:
+        if left < 0:
             raise CalculationError("Can not calculate the factorial of a negative number!")
-        op = int(op1)
-        if op != op1:
+        op = int(left)
+        if op != left:
             raise CalculationError("Can only calculate the factorial of an integer!")
         result = 1
         for i in range(1, op + 1):
@@ -208,6 +207,34 @@ class Factorial(Operator):
 
     def get_symbol(self) -> str:
         return '!'
+
+    def get_priority(self) -> int:
+        return 6
+
+    def get_type(self) -> OperatorType:
+        return OperatorType.RIGHT
+
+
+class DigitSum(Operator):
+    def _calc(self, left: float = None, unused: float = None) -> float:
+
+        is_neg = left < 0
+        left = abs(left)
+
+        while int(left) != left:
+            left *= 10
+
+        res = 0
+        while left != 0:
+            res += left % 10
+            left //= 10
+
+        if is_neg:
+            res *= -1
+        return res
+
+    def get_symbol(self) -> str:
+        return '#'
 
     def get_priority(self) -> int:
         return 6
