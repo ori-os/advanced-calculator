@@ -218,8 +218,8 @@ class Calculator:
                     min_priority is None or self._get_operator(expression[i]).get_priority() <= min_priority):
                 op = self._get_operator(expression[i])
                 if op.get_symbol() != '-' or (
-                        i > 0 and (not self.is_operator(expression[i - 1]) or self._get_operator(
-                    expression[i - 1]).get_type() == OperatorType.RIGHT)):
+                        i > 0 and (not self.is_operator(expression[i - 1])
+                                   or self._get_operator(expression[i - 1]).get_type() == OperatorType.RIGHT)):
                     """Differentiating between minus that represent sign and - that are operators"""
                     res = i
                     min_priority = self._get_operator(expression[i]).get_priority()
@@ -234,18 +234,32 @@ class Calculator:
         Removes all unnecessary large sequences of minuses as follows:
         A sequence of an odd amount of minuses bigger than 1 will be replaced with a single minus (-)
         A sequence of an even amount of minuses bigger than 2 will be replaced with 2 minuses (--)
+        A sequence of an even amount of minuses that comes after an operator that is not of type right will be
+        completely removed (since there is no need for them, they cancel each other out)
         :param expression: the mathematical expression
         :return: the new modified expression string
         """
         i = 0
-        while i < len(expression) - 2:
-            if expression[i] == expression[i + 1] == expression[i + 2] == '-':
-                j = i + 2
+        while i < len(expression) - 1:
+            if expression[i] == expression[i + 1] == '-':
+                j = i + 1
                 while j < len(expression) and expression[j] == '-':
                     j += 1
 
-                expression = expression.replace('-' * (j - i), '-' + '-' * (1 - (j - i) % 2))
-                return self._remove_adjacent_minuses(expression)
+                # Number of minus is uneven
+                if (j - i) % 2 == 1:
+                    expression = expression[:i] + '-' + expression[j:]
+                    i = -1
+                # There is an operator before all the minuses, therefore it's a sign minus (unless it's of type right)
+                elif (i > 0 and self.is_operator(expression[i-1])
+                      and self._get_operator(expression[i-1]).get_type() != OperatorType.RIGHT):
+                    expression = expression[:i] + expression[j:]
+                    i = -1
+                # The first minus is an operator and theres an even amount of minuses, keeping only 2
+                elif j > i+2:
+                    expression = expression[:i] + '--' + expression[j:]
+                    i = -1
+
             i += 1
         return expression
 
@@ -314,7 +328,7 @@ class Calculator:
                             or (self.is_operator(expression[ch + 1])
                                 and self._get_operator(expression[ch + 1]).get_symbol() != '-'
                                 and ((self._get_operator(expression[ch + 1]).get_type() != OperatorType.LEFT)
-                                     or (ch == len(expression) - 2 or not expression[ch+2].isnumeric())))):
+                                     or (ch == len(expression) - 2 or not expression[ch + 2].isnumeric())))):
                         raise CalculatorInputError("Invalid expression structure: operator " + op.get_symbol() +
                                                    " is missing an operand to its right")
                     elif (op.get_type() == OperatorType.LEFT
