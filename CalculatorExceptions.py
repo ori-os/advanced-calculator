@@ -1,4 +1,4 @@
-class InvalidOperatorError(Exception):
+class OperatorError(Exception):
     def __init__(self, reason: str, value=None):
         if value is not None:
             reason += ": " + str(value)

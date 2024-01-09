@@ -1,4 +1,4 @@
-from CalculatorExceptions import InvalidOperatorError, CalculatorInputError
+from CalculatorExceptions import OperatorError, CalculatorInputError
 from Tree import Tree
 from operators.Operator import Operator, Plus, Minus, Multiply, Divide
 from operators.OperatorType import OperatorType
@@ -42,23 +42,23 @@ class Calculator:
                  defined under the same symbol
         """
         if op is None:
-            raise InvalidOperatorError("Operator does not exist. Cannot be None!")
+            raise OperatorError("Operator does not exist. Cannot be None!")
         if not isinstance(op, Operator):
             raise CalculatorInputError("Only objects that are instances of the class Operators can be added to "
                                        "the calculator as an operator")
         if op.get_symbol() is None:
-            raise InvalidOperatorError("Operator is missing a symbol. Cannot be None!")
+            raise OperatorError("Operator is missing a symbol. Cannot be None!")
         if len(op.get_symbol()) != 1:
-            raise InvalidOperatorError("Operator symbol must be a single character! Current length",
-                                       len(op.get_symbol()))
+            raise OperatorError("Operator symbol must be a single character! Current length",
+                                len(op.get_symbol()))
         if op.get_type() is None:
-            raise InvalidOperatorError("Operator is missing a type. Cannot be None!")
+            raise OperatorError("Operator is missing a type. Cannot be None!")
         if op.get_priority() < 1:
-            raise InvalidOperatorError("Operator has invalid priority set, must be positive! Current priority",
-                                       op.get_priority())
+            raise OperatorError("Operator has invalid priority set, must be positive! Current priority",
+                                op.get_priority())
         if op.get_symbol() in self._allowed_chars:
-            raise InvalidOperatorError("Operator symbol is already in use and cannot be given an additional use",
-                                       op.get_symbol())
+            raise OperatorError("Operator symbol is already in use and cannot be given an additional use",
+                                op.get_symbol())
         self._operators[op.get_symbol()] = op
         self._allowed_chars.append(op.get_symbol())
 
