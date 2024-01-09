@@ -255,7 +255,7 @@ class Calculator:
                       and self._get_operator(expression[i-1]).get_type() != OperatorType.RIGHT):
                     expression = expression[:i] + expression[j:]
                     i = -1
-                # The first minus is an operator and theres an even amount of minuses, keeping only 2
+                # The first minus is an operator and there's an even amount of minuses, keeping only 2
                 elif j > i+2:
                     expression = expression[:i] + '--' + expression[j:]
                     i = -1
