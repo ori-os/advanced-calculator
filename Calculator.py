@@ -1,4 +1,4 @@
-from CalculatorExceptions import OperatorError, CalculatorInputError
+from CalculatorExceptions import OperatorError, CalculatorInputError, CalculationError
 from Tree import Tree
 from operators.Operator import Operator, Plus, Minus, Multiply, Divide
 from operators.OperatorType import OperatorType
@@ -251,8 +251,8 @@ class Calculator:
                     expression = expression[:i] + '-' + expression[j:]
                     i = -1
                 # There is an operator before all the minuses, therefore it's a sign minus (unless it's of type right)
-                elif (i > 0 and self.is_operator(expression[i-1])
-                      and self._get_operator(expression[i-1]).get_type() != OperatorType.RIGHT):
+                elif ((i == 0 and j != len(expression)) or (i > 0 and self.is_operator(expression[i-1])
+                      and self._get_operator(expression[i-1]).get_type() != OperatorType.RIGHT)):
                     expression = expression[:i] + expression[j:]
                     i = -1
                 # The first minus is an operator and there's an even amount of minuses, keeping only 2
@@ -261,6 +261,7 @@ class Calculator:
                     i = -1
 
             i += 1
+        print("expression: " + expression)
         return expression
 
     def _validate_structure(self, expression: str):
@@ -320,22 +321,24 @@ class Calculator:
                                     a sign rather than an actual operator.
                             example: 3+--5
                             
-                        4. The operator is of type left and is followed by another operator of type left
+                        4. The operator is of type left and is followed by another operator
                             reason: since the stacking of ~ is not allowed. 
+                            exceptions: if the the other operator is a minus (and therefore can be a sign minus)
                             example: ~~6
                             """
                     if (ch == len(expression) - 1
                             or (self.is_operator(expression[ch + 1])
                                 and self._get_operator(expression[ch + 1]).get_symbol() != '-'
                                 and ((self._get_operator(expression[ch + 1]).get_type() != OperatorType.LEFT)
-                                     or (ch == len(expression) - 2 or not expression[ch + 2].isnumeric())))):
+                                     or (ch == len(expression) - 2 or (self.is_operator(expression[ch + 2])
+                                                                       and expression[ch+2] != '-'))))):
                         raise CalculatorInputError("Invalid expression structure: operator " + op.get_symbol() +
                                                    " is missing an operand to its right")
                     elif (op.get_type() == OperatorType.LEFT
                           and self.is_operator(expression[ch + 1])
-                          and self._get_operator(expression[ch + 1]).get_type() == OperatorType.LEFT):
-                        raise CalculatorInputError("Invalid expression structure: unary operators to the left of an "
-                                                   "operand cannot be stacked!")
+                          and (expression[ch + 1] != '-' or ch == len(expression) - 2 or self.is_operator(expression[ch+2]))):
+                        raise CalculatorInputError("Invalid expression structure: "
+                                                   + op.get_symbol() + " must be followed by a number")
 
             ch += 1
 
@@ -349,3 +352,14 @@ class Calculator:
         if not self.is_operator(symbol):
             return None
         return self._operators[symbol]
+
+    def evaluate_expression_from_input(self):
+        """
+        Scans a mathematical expression from the console. Prints its result or an error to console
+        """
+        s = input("Enter a mathematical expression: \n")
+
+        try:
+            print("The result of the expression is: " + str(self.evaluate_expression(s)))
+        except (CalculationError, CalculatorInputError) as e:
+            print("Could not evaluate the expression: " + str(e))
