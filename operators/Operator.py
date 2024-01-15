@@ -358,11 +358,11 @@ class Factorial(Operator):
         Calculates the factorial of the operand to its left
         :param left: the operator to its left
         :param unused: not in use since there is no right operand
-        :raises CalculationError: if the left operator is negative or not an integer
+        :raises CalculationError: if the left operator is not an integer
         :return: the result of the operation
         """
         if left < 0:
-            raise CalculationError("Can not calculate the factorial of a negative number!")
+            return -self._calc(-left, unused)
         op = int(left)
         if op != left:
             raise CalculationError("Can only calculate the factorial of an integer!")

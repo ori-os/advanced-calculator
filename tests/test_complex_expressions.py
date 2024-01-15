@@ -37,3 +37,6 @@ def test_8():
     assert calc.evaluate_expression("10000%5 * 17! + (13/7 * 14)$12 - 20 + 45@12&7^0") == 7
 
 
+def test_9():
+    assert calc.evaluate_expression("(123#%3)! + 4^2 - (8+2)*1.5 - 2 +~11") == -11
+

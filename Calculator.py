@@ -245,23 +245,19 @@ class Calculator:
                 j = i + 1
                 while j < len(expression) and expression[j] == '-':
                     j += 1
-
                 # Number of minus is uneven
                 if (j - i) % 2 == 1:
-                    expression = expression[:i] + '-' + expression[j:]
-                    i = -1
+                    return expression[:i] + '-' + self._remove_adjacent_minuses(expression[j:])
                 # There is an operator before all the minuses, therefore it's a sign minus (unless it's of type right)
-                elif ((i == 0 and j != len(expression)) or (i > 0 and self.is_operator(expression[i-1])
-                      and self._get_operator(expression[i-1]).get_type() != OperatorType.RIGHT)):
-                    expression = expression[:i] + expression[j:]
-                    i = -1
+                elif ((i == 0 and j != len(expression)) or (i > 0 and self.is_operator(expression[i - 1])
+                                                            and self._get_operator(
+                            expression[i - 1]).get_type() != OperatorType.RIGHT)):
+                    return expression[:i] + self._remove_adjacent_minuses(expression[j:])
                 # The first minus is an operator and there's an even amount of minuses, keeping only 2
-                elif j > i+2:
-                    expression = expression[:i] + '--' + expression[j:]
-                    i = -1
+                elif j > i + 2:
+                    return expression[:i] + '--' + self._remove_adjacent_minuses(expression[j:])
 
             i += 1
-        print("expression: " + expression)
         return expression
 
     def _validate_structure(self, expression: str):
@@ -331,12 +327,14 @@ class Calculator:
                                 and self._get_operator(expression[ch + 1]).get_symbol() != '-'
                                 and ((self._get_operator(expression[ch + 1]).get_type() != OperatorType.LEFT)
                                      or (ch == len(expression) - 2 or (self.is_operator(expression[ch + 2])
-                                                                       and expression[ch+2] != '-'))))):
+                                                                       and expression[ch + 2] != '-'))))):
                         raise CalculatorInputError("Invalid expression structure: operator " + op.get_symbol() +
                                                    " is missing an operand to its right")
                     elif (op.get_type() == OperatorType.LEFT
                           and self.is_operator(expression[ch + 1])
-                          and (expression[ch + 1] != '-' or ch == len(expression) - 2 or self.is_operator(expression[ch+2]))):
+                          and (expression[ch + 1] != '-'
+                               or ch == len(expression) - 2
+                               or self.is_operator(expression[ch + 2]))):
                         raise CalculatorInputError("Invalid expression structure: "
                                                    + op.get_symbol() + " must be followed by a number")
 
