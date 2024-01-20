@@ -198,8 +198,8 @@ class Power(Operator):
         """
         if base < 0 and -1 < exponent < 1:
             raise CalculationError("Cannot calculate the root of a negative number")
-        if base == 0 and exponent == 0:
-            raise CalculationError("Cannot calculate 0 to the power of 0")
+        if base == 0 and exponent < 0:
+            raise CalculationError("Cannot calculate 0 to the power of a none-positive number")
         return base ** exponent
 
     def get_symbol(self) -> str:
@@ -395,8 +395,8 @@ class DigitSum(Operator):
         :param unused: not in use since there is no right operand
         :return: the sum of the digits. If the operator is negative it will return minus the sum of the digits.
         """
-        is_neg = left < 0
-        left = abs(left)
+        if left < 0:
+            return -self._calc(-left, unused)
 
         while int(left) != left:
             left *= 10
@@ -405,9 +405,6 @@ class DigitSum(Operator):
         while left != 0:
             res += left % 10
             left //= 10
-
-        if is_neg:
-            res *= -1
         return res
 
     def get_symbol(self) -> str:
